@@ -119,7 +119,6 @@ def main(args, gpu_id):
                 contacts = out["contacts"].to(device="cpu")
 
             for i, label in enumerate(labels):
-                label = label.split()[0]
                 args.output_file = args.output_dir / f"{label}.pt"
                 args.output_file.parent.mkdir(parents=True, exist_ok=True)
                 result = {"label": label}
