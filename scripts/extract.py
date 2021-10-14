@@ -4,7 +4,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
 import argparse
 import pathlib
 import logging
@@ -13,9 +12,6 @@ from sys import stdout
 import torch
 
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, MSATransformer
-DEFAULT_GPU = '0'
-
-
 DEFAULT_GPU = '0'
 
 
@@ -102,6 +98,12 @@ def main(args, gpu_id):
         model = model.to(torch.device(f'cuda:{gpu_id}'))
         logging.info("Transferred model to GPU")
 
+        if args.gpu_id is None:
+            logging.warning(f"The id for the GPU to compute the embeddings was not specified. Defaulting to {DEFAULT_GPU}")
+            gpu_id = DEFAULT_GPU
+        else:
+            logging.info(f"Computing embeddings on GPU {args.gpu_id}")
+            gpu_id = args.gpu_id
 
     dataset = FastaBatchedDataset.from_file(args.fasta_file)
     batches = dataset.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
@@ -122,7 +124,7 @@ def main(args, gpu_id):
                 f"Processing {batch_idx + 1} of {len(batches)} batches ({toks.size(0)} sequences)"
             )
             if torch.cuda.is_available() and not args.nogpu:
-                toks = toks.to(device=f"cuda", non_blocking=True)
+                toks = toks.to(device=f"cuda:{gpu_id}", non_blocking=True)
 
             out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts)
 
