@@ -4,6 +4,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import os
 import argparse
 import pathlib
 import logging
@@ -75,6 +76,7 @@ def create_parser():
 
 
 def main(args, gpu_id):
+<<<<<<< HEAD
     # Set up logging
     logging_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging_level = logging.DEBUG
@@ -97,13 +99,14 @@ def main(args, gpu_id):
     if torch.cuda.is_available() and not args.nogpu:
         model = model.to(torch.device(f'cuda:{gpu_id}'))
         logging.info("Transferred model to GPU")
+=======
+    model, alphabet = pretrained.load_model_and_alphabet(args.model_location)
+    model.eval()
+>>>>>>> fed4692 (new implementation for gpu option)
 
-        if args.gpu_id is None:
-            logging.warning(f"The id for the GPU to compute the embeddings was not specified. Defaulting to {DEFAULT_GPU}")
-            gpu_id = DEFAULT_GPU
-        else:
-            logging.info(f"Computing embeddings on GPU {args.gpu_id}")
-            gpu_id = args.gpu_id
+    if torch.cuda.is_available() and not args.nogpu:
+        model = model.to(torch.device(f'cuda:{gpu_id}'))
+        logging.info("Transferred model to GPU")
 
     dataset = FastaBatchedDataset.from_file(args.fasta_file)
     batches = dataset.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
