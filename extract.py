@@ -14,6 +14,9 @@ from esm import FastaBatchedDataset, pretrained
 from sys import stdout
 
 
+DEFAULT_GPU = '0'
+
+
 def create_parser():
     parser = argparse.ArgumentParser(
         description="Extract per-token representations and model outputs for sequences in a FASTA file"  # noqa
@@ -62,6 +65,12 @@ def create_parser():
         default=None,
         help="Path to the log file to where the logging messages will be sent"
     )
+    parser.add_argument(
+        "--gpu_id",
+        type=str,
+        default=None,
+        help="The id of the GPU to use when computing the embeddings",
+    )
     parser.add_argument("--nogpu", action="store_true", help="Do not use GPU even if available")
     return parser
 
@@ -85,6 +94,11 @@ def main(args):
         model = model.cuda()
         logging.info("Transferred model to GPU")
 
+        if args.gpu_id is None:
+            logging.warning(f"The id for the GPU to compute the embeddings was not specified. Defaulting to {DEFAULT_GPU}")
+
+        gpu_id = args.gpu_id if args.gpu_id is not None else DEFAULT_GPU
+
     dataset = FastaBatchedDataset.from_file(args.fasta_file)
     batches = dataset.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     data_loader = torch.utils.data.DataLoader(
@@ -104,7 +118,7 @@ def main(args):
                 f"Processing {batch_idx + 1} of {len(batches)} batches ({toks.size(0)} sequences)"
             )
             if torch.cuda.is_available() and not args.nogpu:
-                toks = toks.to(device="cuda", non_blocking=True)
+                toks = toks.to(device=f"cuda:{gpu_id}", non_blocking=True)
 
             # The model is trained on truncated sequences and passing longer ones in at
             # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
