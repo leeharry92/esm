@@ -25,6 +25,9 @@ from sys import stdout
 >>>>>>> 7e80aca (added extra arg for logfile)
 
 
+DEFAULT_GPU = '0'
+
+
 def create_parser():
     parser = argparse.ArgumentParser(
         description="Extract per-token representations and model outputs for sequences in a FASTA file"  # noqa
@@ -107,6 +110,11 @@ def main(args, gpu_id):
     if torch.cuda.is_available() and not args.nogpu:
         model = model.to(torch.device(f'cuda:{gpu_id}'))
         logging.info("Transferred model to GPU")
+
+        if args.gpu_id is None:
+            logging.warning(f"The id for the GPU to compute the embeddings was not specified. Defaulting to {DEFAULT_GPU}")
+
+        gpu_id = args.gpu_id if args.gpu_id is not None else DEFAULT_GPU
 
     dataset = FastaBatchedDataset.from_file(args.fasta_file)
     batches = dataset.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
