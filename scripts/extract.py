@@ -11,9 +11,18 @@ import logging
 
 import torch
 
+<<<<<<< HEAD
 
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, MSATransformer
 DEFAULT_GPU = '0'
+=======
+<<<<<<< HEAD:scripts/extract.py
+from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, MSATransformer
+=======
+from esm import FastaBatchedDataset, pretrained
+from sys import stdout
+>>>>>>> c1ff39d (added extra arg for logfile):extract.py
+>>>>>>> 7e80aca (added extra arg for logfile)
 
 
 def create_parser():
@@ -76,6 +85,17 @@ def create_parser():
 
 
 def main(args, gpu_id):
+    # Set up logging
+    logging_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    logging_level = logging.DEBUG
+    logging_encoding = 'utf-8'
+    if args.log_file is not None:
+        logging.basicConfig(filename=args.log_file, encoding=logging_encoding,
+                            level=logging_level, format=logging_format)
+    else:
+        logging.basicConfig(stream=stdout, encoding=logging_encoding,
+                            level=logging_level, format=logging_format)
+
     model, alphabet = pretrained.load_model_and_alphabet(args.model_location)
     model.eval()
 
