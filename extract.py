@@ -96,8 +96,10 @@ def main(args):
 
         if args.gpu_id is None:
             logging.warning(f"The id for the GPU to compute the embeddings was not specified. Defaulting to {DEFAULT_GPU}")
-
-        gpu_id = args.gpu_id if args.gpu_id is not None else DEFAULT_GPU
+            gpu_id = DEFAULT_GPU
+        else:
+            logging.info(f"Computing embeddings on GPU {args.gpu_id}")
+            gpu_id = args.gpu_id
 
     dataset = FastaBatchedDataset.from_file(args.fasta_file)
     batches = dataset.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
