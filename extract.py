@@ -6,10 +6,12 @@
 
 import argparse
 import pathlib
+import logging
 
 import torch
 
-from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained
+from esm import FastaBatchedDataset, pretrained
+from sys import stdout
 
 
 def create_parser():
@@ -54,24 +56,41 @@ def create_parser():
         action="store_true",
         help="Truncate sequences longer than 1024 to match the training setup",
     )
-
+    parser.add_argument(
+        "--log_file",
+        type=str,
+        default=None,
+        help="Path to the log file to where the logging messages will be sent"
+    )
     parser.add_argument("--nogpu", action="store_true", help="Do not use GPU even if available")
     return parser
 
 
 def main(args):
+    # Set up logging
+    logging_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    logging_level = logging.DEBUG
+    logging_encoding = 'utf-8'
+    if args.log_file is not None:
+        logging.basicConfig(filename=args.log_file, encoding=logging_encoding,
+                            level=logging_level, format=logging_format)
+    else:
+        logging.basicConfig(stream=stdout, encoding=logging_encoding,
+                            level=logging_level, format=logging_format)
+
+
     model, alphabet = pretrained.load_model_and_alphabet(args.model_location)
     model.eval()
     if torch.cuda.is_available() and not args.nogpu:
         model = model.cuda()
-        print("Transferred model to GPU")
+        logging.info("Transferred model to GPU")
 
     dataset = FastaBatchedDataset.from_file(args.fasta_file)
     batches = dataset.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     data_loader = torch.utils.data.DataLoader(
         dataset, collate_fn=alphabet.get_batch_converter(), batch_sampler=batches
     )
-    print(f"Read {args.fasta_file} with {len(dataset)} sequences")
+    logging.info(f"Read {args.fasta_file} with {len(dataset)} sequences")
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     return_contacts = "contacts" in args.include
@@ -81,7 +100,7 @@ def main(args):
 
     with torch.no_grad():
         for batch_idx, (labels, strs, toks) in enumerate(data_loader):
-            print(
+            logging.info(
                 f"Processing {batch_idx + 1} of {len(batches)} batches ({toks.size(0)} sequences)"
             )
             if torch.cuda.is_available() and not args.nogpu:
@@ -134,3 +153,4 @@ if __name__ == "__main__":
     parser = create_parser()
     args = parser.parse_args()
     main(args)
+    logging.info('Successfully completed')
