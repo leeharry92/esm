@@ -54,9 +54,10 @@ def create_parser():
         required=True,
     )
     parser.add_argument(
-        "--truncate",
-        action="store_true",
-        help="Truncate sequences longer than 1024 to match the training setup",
+        "--truncation_seq_length",
+        type=int,
+        default=1022,
+        help="truncate sequences longer than the given value",
     )
     parser.add_argument(
         "--log_file",
@@ -90,7 +91,7 @@ def main(args, gpu_id):
     dataset = FastaBatchedDataset.from_file(args.fasta_file)
     batches = dataset.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     data_loader = torch.utils.data.DataLoader(
-        dataset, collate_fn=alphabet.get_batch_converter(), batch_sampler=batches
+        dataset, collate_fn=alphabet.get_batch_converter(args.truncation_seq_length), batch_sampler=batches
     )
     logging.info(f"Read {args.fasta_file} with {len(dataset)} sequences")
 
@@ -107,11 +108,6 @@ def main(args, gpu_id):
             )
             if torch.cuda.is_available() and not args.nogpu:
                 toks = toks.to(device=f"cuda:{gpu_id}", non_blocking=True)
-
-            # The model is trained on truncated sequences and passing longer ones in at
-            # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
-            if args.truncate:
-                toks = toks[:, :1022]
 
             out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts)
 
