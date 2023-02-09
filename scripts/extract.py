@@ -4,7 +4,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
 import argparse
 import pathlib
 import logging
@@ -187,9 +186,6 @@ def setup(args):
     else:
         logging.info(f"Computing embeddings on GPU {args.gpu_id}")
         gpu_id = args.gpu_id
-
-    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
 
     return gpu_id
 
