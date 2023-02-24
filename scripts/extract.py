@@ -98,14 +98,9 @@ def main(args, gpu_id):
     if torch.cuda.is_available() and not args.nogpu:
         model = model.to(torch.device(f'cuda:{gpu_id}'))
         logging.info("Transferred model to GPU")
-=======
+
     model, alphabet = pretrained.load_model_and_alphabet(args.model_location)
     model.eval()
->>>>>>> fed4692 (new implementation for gpu option)
-
-    if torch.cuda.is_available() and not args.nogpu:
-        model = model.to(torch.device(f'cuda:{gpu_id}'))
-        logging.info("Transferred model to GPU")
 
     dataset = FastaBatchedDataset.from_file(args.fasta_file)
     batches = dataset.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
